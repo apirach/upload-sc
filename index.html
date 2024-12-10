@@ -40,16 +40,34 @@
     .auth-button:hover {
       background-color: #2C8C45;
     }
+    /* Popup Styles */
+    #popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 20px;
+      background: white;
+      border: 2px solid #ccc;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+    }
+    #popup p {
+      margin: 0;
+      font-size: 18px;
+      color: #333;
+    }
   </style>
 </head>
 <body>
   <h1>Upload SC</h1>
 
-  <form id="uploadForm" style="display: none;">
+  <form id="uploadForm">
     <!-- ช่องกรอก Job Number -->
     <label for="jobNumber">Job Number:</label>
     <input 
-      type="text" 
+      type="number" 
       id="jobNumber" 
       placeholder="กรอก Job Number" 
       required
@@ -77,98 +95,32 @@
     <button type="button" onclick="uploadFiles()">Upload</button>
   </form>
 
+  <!-- Popup -->
+  <div id="popup">
+    <p id="popupMessage">กำลังอัปโหลด...</p>
+  </div>
+
   <script>
-    // ระบุ Client ID และ Redirect URI จาก Google Cloud Console
-    const CLIENT_ID = '909733605627-a49hks8h150acvv05425tpj8oru3ah1v.apps.googleusercontent.com'; // Client ID ของคุณ
-    const REDIRECT_URI = 'https://apirach.github.io/upload-sc/'; // URL Redirect URI ของคุณ
-    const SCOPE = 'https://www.googleapis.com/auth/drive.file';
-
-    // ระบุ Folder ID ของโฟลเดอร์หลัก "Upload SC"
-    const UPLOAD_SC_FOLDER_ID = '1-vLUogFjrmAQxrOfiBUX7OMtfemf__l4'; // ระบุ Folder ID ของโฟลเดอร์หลัก
-
-    // ฟังก์ชันสำหรับขอสิทธิ์ OAuth
-    function authenticate() {
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=token&client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${SCOPE}&access_type=online`;
-      window.location.href = authUrl; // ส่งผู้ใช้ไปหน้าขอสิทธิ์
+    // แสดง Popup
+    function showPopup(message) {
+      const popup = document.getElementById('popup');
+      const popupMessage = document.getElementById('popupMessage');
+      popupMessage.textContent = message;
+      popup.style.display = 'block';
     }
 
-    // ฟังก์ชันดึง Access Token จาก URL หลังผู้ใช้อนุญาต
-    function getAccessTokenFromUrl() {
-      const params = new URLSearchParams(window.location.hash.substring(1));
-      return params.get('access_token'); // ดึง Access Token
+    // ซ่อน Popup
+    function hidePopup() {
+      const popup = document.getElementById('popup');
+      popup.style.display = 'none';
     }
 
-    // ฟังก์ชันสร้างโฟลเดอร์ย่อยใน "Upload SC"
-    async function createSubFolder(folderName, accessToken) {
-      const metadata = {
-        name: folderName,
-        mimeType: 'application/vnd.google-apps.folder',
-        parents: [UPLOAD_SC_FOLDER_ID], // โฟลเดอร์ย่อยใน "Upload SC"
-      };
-
-      try {
-        const response = await fetch('https://www.googleapis.com/drive/v3/files', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(metadata),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Error creating subfolder: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log('Subfolder created:', data);
-        return data.id;
-      } catch (error) {
-        console.error(error);
-        alert('ไม่สามารถสร้างโฟลเดอร์ย่อยได้');
-        return null;
-      }
+    // ล้างฟอร์ม
+    function clearForm() {
+      document.getElementById('uploadForm').reset();
     }
 
-    // ฟังก์ชันอัปโหลดไฟล์พร้อมเปลี่ยนชื่อ
-    async function uploadFile(file, subFolderId, newFileName, accessToken) {
-      const metadata = {
-        name: newFileName, // เปลี่ยนชื่อไฟล์
-        parents: [subFolderId], // ใส่ Folder ID ของโฟลเดอร์ย่อย
-      };
-
-      const formData = new FormData();
-      formData.append(
-        'metadata',
-        new Blob([JSON.stringify(metadata)], { type: 'application/json' })
-      );
-      formData.append('file', file);
-
-      try {
-        const response = await fetch(
-          'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-            body: formData,
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`Error uploading file: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log(`File uploaded: ${data.name}`);
-      } catch (error) {
-        console.error(error);
-        alert(`ไม่สามารถอัปโหลดไฟล์ "${file.name}" ได้`);
-      }
-    }
-
-    // ฟังก์ชันหลักสำหรับอัปโหลดไฟล์ทั้งหมด
+    // ฟังก์ชันหลักสำหรับอัปโหลดไฟล์
     async function uploadFiles() {
       const jobNumber = document.getElementById('jobNumber').value.trim();
       const symptoms = document.getElementById('symptoms').value.trim();
@@ -179,37 +131,28 @@
         return;
       }
 
-      // รับ Access Token จาก URL
-      const accessToken = getAccessTokenFromUrl();
-      if (!accessToken) {
-        alert('Access Token ไม่ถูกต้อง. โปรดตรวจสอบการเชื่อมต่อ Google OAuth.');
-        return;
+      // แสดงข้อความ "กำลังอัปโหลด..."
+      showPopup('กำลังอัปโหลด...');
+
+      try {
+        // Simulate upload delay (แทนที่ด้วยโค้ดอัปโหลดจริง)
+        for (let i = 0; i < files.length; i++) {
+          console.log(`Uploading file: ${files[i].name}`);
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate delay
+        }
+
+        // แสดงข้อความ "อัปโหลดสำเร็จ!"
+        showPopup('อัปโหลดสำเร็จ!');
+        setTimeout(() => {
+          hidePopup();
+          clearForm(); // ล้างฟอร์ม
+        }, 2000); // ซ่อน popup หลัง 2 วินาที
+      } catch (error) {
+        console.error('Upload error:', error);
+        showPopup('เกิดข้อผิดพลาดในการอัปโหลด');
+        setTimeout(() => hidePopup(), 2000); // ซ่อน popup หลัง 2 วินาที
       }
-
-      // สร้างโฟลเดอร์ย่อย
-      const subFolderName = `${jobNumber} ${symptoms}`;
-      const subFolderId = await createSubFolder(subFolderName, accessToken);
-      if (!subFolderId) return;
-
-      // อัปโหลดไฟล์ทั้งหมดพร้อมเปลี่ยนชื่อ
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const newFileName = `${subFolderName}-${i + 1}.${file.name.split('.').pop()}`; // เปลี่ยนชื่อไฟล์
-        await uploadFile(file, subFolderId, newFileName, accessToken);
-      }
-
-      alert('ไฟล์ทั้งหมดอัปโหลดสำเร็จ!');
     }
-
-    // แสดงฟอร์มหรือเรียก authenticate อัตโนมัติ
-    window.onload = function () {
-      const accessToken = getAccessTokenFromUrl();
-      if (accessToken) {
-        document.getElementById('uploadForm').style.display = 'block';
-      } else {
-        authenticate(); // เรียกฟังก์ชัน authenticate อัตโนมัติเมื่อไม่มี Access Token
-      }
-    };
   </script>
 </body>
 </html>
