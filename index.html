@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload SC</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      text-align: center;
+    }
+    form {
+      max-width: 400px;
+      margin: auto;
+      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    input, textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    button {
+      background-color: #4285F4;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #357ae8;
+    }
+  </style>
+</head>
+<body>
+  <h1>Upload SC</h1>
+  <form id="uploadForm">
+    <!-- กรอกข้อมูล Job Number -->
+    <input type="text" id="jobNumber" placeholder="กรอก Job Number" required>
+    
+    <!-- กรอกข้อมูล Symptoms -->
+    <textarea id="symptoms" placeholder="กรอกอาการ" required></textarea>
+    
+    <!-- เลือกไฟล์ -->
+    <input type="file" id="fileInput" multiple accept="image/*,video/*" required>
+    
+    <!-- ปุ่ม Upload -->
+    <button type="button" onclick="uploadFiles()">Upload</button>
+  </form>
+
+  <script>
+    async function uploadFiles() {
+      const jobNumber = document.getElementById('jobNumber').value.trim();
+      const symptoms = document.getElementById('symptoms').value.trim();
+      const files = document.getElementById('fileInput').files;
+
+      if (!jobNumber || !symptoms || files.length === 0) {
+        alert('กรุณากรอกข้อมูลและเลือกไฟล์ให้ครบ');
+        return;
+      }
+
+      console.log('Uploading files...');
+      console.log('Job Number:', jobNumber);
+      console.log('Symptoms:', symptoms);
+      console.log('Files:', files);
+
+      // ต่อ API หรือฟังก์ชันอัปโหลดที่นี่
+      alert('ระบบพร้อมสำหรับการอัปโหลด!');
+    }
+  </script>
+</body>
+</html>
