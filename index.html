@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Upload SC</title>
+  <title>ส่งงาน SC</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -31,19 +31,25 @@
       border-radius: 5px;
       cursor: pointer;
     }
-    button:hover {
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    button:hover:enabled {
       background-color: #357ae8;
     }
-    .auth-button {
-      background-color: #34A853;
-    }
-    .auth-button:hover {
-      background-color: #2C8C45;
+    .footer {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      font-size: 12px;
+      font-style: italic;
+      color: #888;
     }
   </style>
 </head>
 <body>
-  <h1>Upload SC</h1>
+  <h1>ส่งงาน SC</h1>
 
   <form id="uploadForm" style="display: none;">
     <!-- ช่องกรอก Job Number -->
@@ -55,11 +61,11 @@
       required
     >
 
-    <!-- ช่องกรอก Symptoms -->
-    <label for="symptoms">Symptoms:</label>
+    <!-- ช่องกรอก อาการที่ตรวจพบ -->
+    <label for="symptoms">อาการที่ตรวจพบ:</label> <!-- เปลี่ยนข้อความ -->
     <textarea 
       id="symptoms" 
-      placeholder="กรอกอาการ" 
+      placeholder="กรอกอาการที่ตรวจพบ" 
       required
     ></textarea>
 
@@ -73,9 +79,12 @@
       required
     >
 
-    <!-- ปุ่ม Upload -->
-    <button type="button" onclick="uploadFiles()">Upload</button>
+    <!-- ปุ่มส่งงาน -->
+    <button type="button" id="uploadButton" onclick="uploadFiles()">ส่งงาน</button>
   </form>
+
+  <!-- ข้อความเครดิต -->
+  <div class="footer">Designed by Apirach Rattanaudompisut</div>
 
   <script>
     // ระบุ Client ID และ Redirect URI จาก Google Cloud Console
@@ -96,6 +105,18 @@
     function getAccessTokenFromUrl() {
       const params = new URLSearchParams(window.location.hash.substring(1));
       return params.get('access_token'); // ดึง Access Token
+    }
+
+    // ฟังก์ชันเปลี่ยนสถานะปุ่ม
+    function updateButtonStatus(isUploading) {
+      const button = document.getElementById('uploadButton');
+      if (isUploading) {
+        button.textContent = 'กำลังส่งงาน...'; // เปลี่ยนข้อความในปุ่ม
+        button.disabled = true; // ปิดการใช้งานปุ่ม
+      } else {
+        button.textContent = 'ส่งงาน'; // เปลี่ยนกลับเป็นข้อความเดิม
+        button.disabled = false; // เปิดการใช้งานปุ่ม
+      }
     }
 
     // ฟังก์ชันสร้างโฟลเดอร์ย่อยใน "Upload SC"
@@ -186,19 +207,27 @@
         return;
       }
 
+      // เปลี่ยนสถานะปุ่ม
+      updateButtonStatus(true);
+
       // สร้างโฟลเดอร์ย่อย
       const subFolderName = `${jobNumber} ${symptoms}`;
       const subFolderId = await createSubFolder(subFolderName, accessToken);
-      if (!subFolderId) return;
+      if (!subFolderId) {
+        updateButtonStatus(false); // กรณีเกิดข้อผิดพลาด
+        return;
+      }
 
       // อัปโหลดไฟล์ทั้งหมดพร้อมเปลี่ยนชื่อ
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const newFileName = `${subFolderName}-${i + 1}.${file.name.split('.').pop()}`; // เปลี่ยนชื่อไฟล์
+        const newFileName = `${subFolderName}-${i + 1}.${file.name.split('.').pop()}`;
         await uploadFile(file, subFolderId, newFileName, accessToken);
       }
 
       alert('ไฟล์ทั้งหมดอัปโหลดสำเร็จ!');
+      document.getElementById('uploadForm').reset(); // ล้างฟอร์ม
+      updateButtonStatus(false); // กลับสู่สถานะปุ่มเดิม
     }
 
     // แสดงฟอร์มหรือเรียก authenticate อัตโนมัติ
