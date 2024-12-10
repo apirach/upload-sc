@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Upload SC</title>
+  <title>ส่งงาน SC</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -31,14 +31,12 @@
       border-radius: 5px;
       cursor: pointer;
     }
-    button:hover {
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    button:hover:enabled {
       background-color: #357ae8;
-    }
-    .auth-button {
-      background-color: #34A853;
-    }
-    .auth-button:hover {
-      background-color: #2C8C45;
     }
   </style>
 </head>
@@ -74,12 +72,29 @@
     >
 
     <!-- ปุ่ม Upload -->
-    <button type="button" onclick="uploadFiles()">Upload</button>
+    <button type="button" id="uploadButton" onclick="uploadFiles()">Upload</button>
   </form>
 
   <script>
-    // ตัวอย่างสคริปต์สำหรับจัดการการอัปโหลดไฟล์...
-    function uploadFiles() {
+    // ฟังก์ชันล้างฟอร์ม
+    function clearForm() {
+      document.getElementById('uploadForm').reset(); // ล้างค่าในฟอร์ม
+    }
+
+    // ฟังก์ชันเปลี่ยนสถานะปุ่ม
+    function updateButtonStatus(isUploading) {
+      const button = document.getElementById('uploadButton');
+      if (isUploading) {
+        button.textContent = 'Uploading...'; // เปลี่ยนข้อความในปุ่ม
+        button.disabled = true; // ปิดการใช้งานปุ่ม
+      } else {
+        button.textContent = 'Upload'; // เปลี่ยนกลับเป็นข้อความเดิม
+        button.disabled = false; // เปิดการใช้งานปุ่ม
+      }
+    }
+
+    // ฟังก์ชันสำหรับอัปโหลดไฟล์
+    async function uploadFiles() {
       const jobNumber = document.getElementById('jobNumber').value.trim();
       const symptoms = document.getElementById('symptoms').value.trim();
       const files = document.getElementById('fileInput').files;
@@ -89,9 +104,28 @@
         return;
       }
 
-      alert(`Job Number: ${jobNumber}\nSymptoms: ${symptoms}\nFiles Selected: ${files.length}`);
+      // เปลี่ยนปุ่มเป็นสถานะ Inactive (กำลังอัปโหลด)
+      updateButtonStatus(true);
+
+      try {
+        // Simulate the upload process (แทนที่ด้วยโค้ดอัปโหลดจริง)
+        for (let i = 0; i < files.length; i++) {
+          console.log(`Uploading file: ${files[i].name}`);
+          await new Promise(resolve => setTimeout(resolve, 1000)); // จำลองการดีเลย์ 1 วินาที
+        }
+
+        alert('Upload สำเร็จ!'); // แสดงข้อความสำเร็จ
+        clearForm(); // ล้างฟอร์ม
+      } catch (error) {
+        console.error('Error while uploading:', error);
+        alert('เกิดข้อผิดพลาดในการอัปโหลด');
+      } finally {
+        // กลับสู่สถานะปุ่มเดิม
+        updateButtonStatus(false);
+      }
     }
 
+    // แสดงฟอร์มเมื่อโหลดหน้าเว็บ
     window.onload = function () {
       document.getElementById('uploadForm').style.display = 'block';
     };
