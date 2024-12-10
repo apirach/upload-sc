@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Upload SC</title>
+  <title>ส่งงาน SC</title> <!-- เปลี่ยนชื่อเป็น ส่งงาน SC -->
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -58,10 +58,19 @@
       font-size: 18px;
       color: #333;
     }
+    /* ข้อความเครดิตที่ด้านล่างขวา */
+    .footer {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      font-size: 12px;
+      font-style: italic;
+      color: #888;
+    }
   </style>
 </head>
 <body>
-  <h1>Upload SC</h1>
+  <h1>ส่งงาน SC</h1> <!-- เปลี่ยนชื่อเป็น ส่งงาน SC -->
 
   <form id="uploadForm">
     <!-- ช่องกรอก Job Number -->
@@ -99,6 +108,9 @@
   <div id="popup">
     <p id="popupMessage">กำลังอัปโหลด...</p>
   </div>
+
+  <!-- ข้อความเครดิต -->
+  <div class="footer">Designed by Apirach Rattanadompisut</div>
 
   <script>
     // แสดง Popup
