@@ -45,9 +45,6 @@
 <body>
   <h1>Upload SC</h1>
 
-  <!-- ปุ่มสำหรับเชื่อมต่อกับ Google Drive -->
-  <button class="auth-button" onclick="authenticate()">Connect to Google Drive</button>
-
   <form id="uploadForm" style="display: none;">
     <!-- ช่องกรอก Job Number -->
     <label for="jobNumber">Job Number:</label>
@@ -204,11 +201,13 @@
       alert('ไฟล์ทั้งหมดอัปโหลดสำเร็จ!');
     }
 
-    // แสดงฟอร์มเมื่อผู้ใช้มี Access Token
+    // แสดงฟอร์มหรือเรียก authenticate อัตโนมัติ
     window.onload = function () {
       const accessToken = getAccessTokenFromUrl();
       if (accessToken) {
         document.getElementById('uploadForm').style.display = 'block';
+      } else {
+        authenticate(); // เรียกฟังก์ชัน authenticate อัตโนมัติเมื่อไม่มี Access Token
       }
     };
   </script>
