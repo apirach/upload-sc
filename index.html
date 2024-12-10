@@ -16,6 +16,7 @@
       border: 1px solid #ccc;
       padding: 20px;
       border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
     input, textarea, button {
       width: 100%;
@@ -38,38 +39,64 @@
 <body>
   <h1>Upload SC</h1>
   <form id="uploadForm">
-    <!-- กรอกข้อมูล Job Number -->
-    <input type="text" id="jobNumber" placeholder="กรอก Job Number" required>
-    
-    <!-- กรอกข้อมูล Symptoms -->
-    <textarea id="symptoms" placeholder="กรอกอาการ" required></textarea>
-    
-    <!-- เลือกไฟล์ -->
-    <input type="file" id="fileInput" multiple accept="image/*,video/*" required>
-    
+    <!-- ช่องกรอก Job Number (เฉพาะตัวเลข) -->
+    <label for="jobNumber">Job Number:</label>
+    <input 
+      type="number" 
+      id="jobNumber" 
+      placeholder="กรอก Job Number" 
+      required
+    >
+
+    <!-- ช่องกรอก Symptoms -->
+    <label for="symptoms">Symptoms:</label>
+    <textarea 
+      id="symptoms" 
+      placeholder="กรอกอาการ" 
+      required
+    ></textarea>
+
+    <!-- ช่องเลือกไฟล์ (รองรับรูปภาพและวิดีโอ) -->
+    <label for="fileInput">เลือกไฟล์ (รูปภาพหรือวิดีโอ):</label>
+    <input 
+      type="file" 
+      id="fileInput" 
+      multiple 
+      accept="image/*,video/*" 
+      required
+    >
+
     <!-- ปุ่ม Upload -->
     <button type="button" onclick="uploadFiles()">Upload</button>
   </form>
 
   <script>
+    // ฟังก์ชันตรวจสอบข้อมูลและแสดงใน Console
     async function uploadFiles() {
       const jobNumber = document.getElementById('jobNumber').value.trim();
       const symptoms = document.getElementById('symptoms').value.trim();
       const files = document.getElementById('fileInput').files;
 
+      // ตรวจสอบว่ากรอกข้อมูลครบหรือยัง
       if (!jobNumber || !symptoms || files.length === 0) {
-        alert('กรุณากรอกข้อมูลและเลือกไฟล์ให้ครบ');
+        alert('กรุณากรอกข้อมูลและเลือกไฟล์ให้ครบถ้วน');
         return;
       }
 
       console.log('Uploading files...');
       console.log('Job Number:', jobNumber);
       console.log('Symptoms:', symptoms);
-      console.log('Files:', files);
+      console.log('Selected Files:', files);
 
-      // ต่อ API หรือฟังก์ชันอัปโหลดที่นี่
-      alert('ระบบพร้อมสำหรับการอัปโหลด!');
+      alert('ข้อมูลพร้อมสำหรับการอัปโหลด');
+      
+      // ต่อ Google Drive API ในขั้นตอนถัดไป
     }
+
+    // บังคับให้กรอกเฉพาะตัวเลขในช่อง Job Number (กันการพิมพ์ตัวอักษร)
+    document.getElementById('jobNumber').addEventListener('input', function () {
+      this.value = this.value.replace(/[^0-9]/g, ''); // รับเฉพาะตัวเลข
+    });
   </script>
 </body>
 </html>
