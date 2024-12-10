@@ -49,6 +49,23 @@
   <button class="auth-button" onclick="authenticate()">Connect to Google Drive</button>
 
   <form id="uploadForm" style="display: none;">
+    <!-- ช่องกรอก Job Number -->
+    <label for="jobNumber">Job Number:</label>
+    <input 
+      type="text" 
+      id="jobNumber" 
+      placeholder="กรอก Job Number" 
+      required
+    >
+
+    <!-- ช่องกรอก Symptoms -->
+    <label for="symptoms">Symptoms:</label>
+    <textarea 
+      id="symptoms" 
+      placeholder="กรอกอาการ" 
+      required
+    ></textarea>
+
     <!-- ช่องเลือกไฟล์ -->
     <label for="fileInput">เลือกไฟล์ (รูปภาพหรือวิดีโอ):</label>
     <input 
@@ -65,32 +82,62 @@
 
   <script>
     // ระบุ Client ID และ Redirect URI จาก Google Cloud Console
-    const CLIENT_ID = 'YOUR_CLIENT_ID'; // ใส่ Client ID ของคุณ
-    const REDIRECT_URI = 'YOUR_REDIRECT_URI'; // ใส่ URL ของ Redirect URI
+    const CLIENT_ID = '909733605627-a49hks8h150acvv05425tpj8oru3ah1v.apps.googleusercontent.com'; // Client ID ของคุณ
+    const REDIRECT_URI = 'https://apirach.github.io/upload-sc/'; // URL Redirect URI ของคุณ
     const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 
-    // ระบุ Folder ID ของโฟลเดอร์ "Upload SC" ใน Google Drive
-    const UPLOAD_SC_FOLDER_ID = 'YOUR_UPLOAD_SC_FOLDER_ID'; // ใส่ Folder ID ของคุณ
+    // ระบุ Folder ID ของโฟลเดอร์หลัก "Upload SC"
+    const UPLOAD_SC_FOLDER_ID = 'YOUR_UPLOAD_SC_FOLDER_ID'; // ระบุ Folder ID ของโฟลเดอร์หลัก
 
     // ฟังก์ชันสำหรับขอสิทธิ์ OAuth
     function authenticate() {
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=token&client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${SCOPE}&access_type=online`;
-
-      // ส่งผู้ใช้ไปหน้าขอสิทธิ์
-      window.location.href = authUrl;
+      window.location.href = authUrl; // ส่งผู้ใช้ไปหน้าขอสิทธิ์
     }
 
     // ฟังก์ชันดึง Access Token จาก URL หลังผู้ใช้อนุญาต
     function getAccessTokenFromUrl() {
       const params = new URLSearchParams(window.location.hash.substring(1));
-      return params.get('access_token'); // ดึงค่า Access Token
+      return params.get('access_token'); // ดึง Access Token
     }
 
-    // ฟังก์ชันอัปโหลดไฟล์ไปยัง Google Drive
-    async function uploadFile(file, accessToken) {
+    // ฟังก์ชันสร้างโฟลเดอร์ย่อยใน "Upload SC"
+    async function createSubFolder(folderName, accessToken) {
       const metadata = {
-        name: file.name, // ใช้ชื่อไฟล์เดิม
-        parents: [UPLOAD_SC_FOLDER_ID], // อัปโหลดไปยังโฟลเดอร์ "Upload SC"
+        name: folderName,
+        mimeType: 'application/vnd.google-apps.folder',
+        parents: [UPLOAD_SC_FOLDER_ID], // โฟลเดอร์ย่อยใน "Upload SC"
+      };
+
+      try {
+        const response = await fetch('https://www.googleapis.com/drive/v3/files', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(metadata),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error creating subfolder: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('Subfolder created:', data);
+        return data.id;
+      } catch (error) {
+        console.error(error);
+        alert('ไม่สามารถสร้างโฟลเดอร์ย่อยได้');
+        return null;
+      }
+    }
+
+    // ฟังก์ชันอัปโหลดไฟล์พร้อมเปลี่ยนชื่อ
+    async function uploadFile(file, subFolderId, newFileName, accessToken) {
+      const metadata = {
+        name: newFileName, // เปลี่ยนชื่อไฟล์
+        parents: [subFolderId], // ใส่ Folder ID ของโฟลเดอร์ย่อย
       };
 
       const formData = new FormData();
@@ -126,10 +173,12 @@
 
     // ฟังก์ชันหลักสำหรับอัปโหลดไฟล์ทั้งหมด
     async function uploadFiles() {
+      const jobNumber = document.getElementById('jobNumber').value.trim();
+      const symptoms = document.getElementById('symptoms').value.trim();
       const files = document.getElementById('fileInput').files;
 
-      if (files.length === 0) {
-        alert('กรุณาเลือกไฟล์เพื่ออัปโหลด');
+      if (!jobNumber || !symptoms || files.length === 0) {
+        alert('กรุณากรอกข้อมูลและเลือกไฟล์ให้ครบ');
         return;
       }
 
@@ -140,10 +189,16 @@
         return;
       }
 
-      // อัปโหลดไฟล์ทั้งหมดไปยังโฟลเดอร์ "Upload SC"
+      // สร้างโฟลเดอร์ย่อย
+      const subFolderName = `${jobNumber} ${symptoms}`;
+      const subFolderId = await createSubFolder(subFolderName, accessToken);
+      if (!subFolderId) return;
+
+      // อัปโหลดไฟล์ทั้งหมดพร้อมเปลี่ยนชื่อ
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        await uploadFile(file, accessToken);
+        const newFileName = `${subFolderName}-${i + 1}.${file.name.split('.').pop()}`; // เปลี่ยนชื่อไฟล์
+        await uploadFile(file, subFolderId, newFileName, accessToken);
       }
 
       alert('ไฟล์ทั้งหมดอัปโหลดสำเร็จ!');
