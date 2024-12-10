@@ -73,7 +73,13 @@
   <!-- ฟอร์มอัปโหลด -->
   <form id="uploadForm" style="display: none;">
     <label for="jobNumber">Job Number:</label>
-    <input type="text" id="jobNumber" placeholder="กรอก Job Number" required>
+    <input 
+      type="number" 
+      id="jobNumber" 
+      inputmode="numeric" 
+      placeholder="กรอก Job Number" 
+      required
+    >
     <label for="symptoms">อาการที่ตรวจพบ:</label>
     <textarea id="symptoms" placeholder="กรอกอาการที่ตรวจพบ" required></textarea>
     <label for="fileInput">เลือกไฟล์ (รูปภาพหรือวิดีโอ):</label>
