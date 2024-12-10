@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ส่งงาน SC</title> <!-- เปลี่ยนชื่อเป็น ส่งงาน SC -->
+  <title>ส่งงาน SC</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -31,34 +31,13 @@
       border-radius: 5px;
       cursor: pointer;
     }
-    button:hover {
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    button:hover:enabled {
       background-color: #357ae8;
     }
-    .auth-button {
-      background-color: #34A853;
-    }
-    .auth-button:hover {
-      background-color: #2C8C45;
-    }
-    /* Popup Styles */
-    #popup {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      padding: 20px;
-      background: white;
-      border: 2px solid #ccc;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-      z-index: 1000;
-    }
-    #popup p {
-      margin: 0;
-      font-size: 18px;
-      color: #333;
-    }
-    /* ข้อความเครดิตที่ด้านล่างขวา */
     .footer {
       position: fixed;
       bottom: 10px;
@@ -70,7 +49,7 @@
   </style>
 </head>
 <body>
-  <h1>ส่งงาน SC</h1> <!-- เปลี่ยนชื่อเป็น ส่งงาน SC -->
+  <h1>ส่งงาน SC</h1>
 
   <form id="uploadForm">
     <!-- ช่องกรอก Job Number -->
@@ -83,7 +62,7 @@
     >
 
     <!-- ช่องกรอก สรุป อาการเสีย -->
-    <label for="symptoms">สรุป อาการเสีย:</label> <!-- เปลี่ยนคำว่า Symptoms -->
+    <label for="symptoms">สรุป อาการเสีย:</label>
     <textarea 
       id="symptoms" 
       placeholder="กรอกสรุปอาการเสีย" 
@@ -100,36 +79,24 @@
       required
     >
 
-    <!-- ปุ่ม Upload -->
-    <button type="button" onclick="uploadFiles()">Upload</button>
+    <!-- ปุ่มส่งงาน -->
+    <button type="button" id="uploadButton" onclick="uploadFiles()">กดส่งงาน</button>
   </form>
-
-  <!-- Popup -->
-  <div id="popup">
-    <p id="popupMessage">กำลังอัปโหลด...</p>
-  </div>
 
   <!-- ข้อความเครดิต -->
   <div class="footer">Designed by Apirach Rattanadompisut</div>
 
   <script>
-    // แสดง Popup
-    function showPopup(message) {
-      const popup = document.getElementById('popup');
-      const popupMessage = document.getElementById('popupMessage');
-      popupMessage.textContent = message;
-      popup.style.display = 'block';
-    }
-
-    // ซ่อน Popup
-    function hidePopup() {
-      const popup = document.getElementById('popup');
-      popup.style.display = 'none';
-    }
-
     // ล้างฟอร์ม
     function clearForm() {
       document.getElementById('uploadForm').reset();
+    }
+
+    // อัปเดตสถานะของปุ่ม
+    function updateButton(status, disabled = false) {
+      const button = document.getElementById('uploadButton');
+      button.textContent = status; // เปลี่ยนข้อความในปุ่ม
+      button.disabled = disabled; // ปิดหรือเปิดการใช้งานปุ่ม
     }
 
     // ฟังก์ชันหลักสำหรับอัปโหลดไฟล์
@@ -143,8 +110,8 @@
         return;
       }
 
-      // แสดงข้อความ "กำลังอัปโหลด..."
-      showPopup('กำลังอัปโหลด...');
+      // เปลี่ยนปุ่มเป็น "กำลังส่งงาน" และปิดการใช้งาน
+      updateButton('กำลังส่งงาน', true);
 
       try {
         // Simulate upload delay (แทนที่ด้วยโค้ดอัปโหลดจริง)
@@ -153,16 +120,19 @@
           await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate delay
         }
 
-        // แสดงข้อความ "อัปโหลดสำเร็จ!"
-        showPopup('อัปโหลดสำเร็จ!');
+        // เปลี่ยนปุ่มเป็น "ส่งงานสำเร็จ"
+        updateButton('ส่งงานสำเร็จ');
         setTimeout(() => {
-          hidePopup();
-          clearForm(); // ล้างฟอร์ม
-        }, 2000); // ซ่อน popup หลัง 2 วินาที
+          // ล้างฟอร์ม
+          clearForm();
+          // เปลี่ยนปุ่มกลับมาเป็น "กดส่งงาน" และเปิดใช้งาน
+          updateButton('กดส่งงาน', false);
+        }, 2000); // รอ 2 วินาทีหลังจากส่งงานสำเร็จ
       } catch (error) {
         console.error('Upload error:', error);
-        showPopup('เกิดข้อผิดพลาดในการอัปโหลด');
-        setTimeout(() => hidePopup(), 2000); // ซ่อน popup หลัง 2 วินาที
+        alert('เกิดข้อผิดพลาดในการส่งงาน');
+        // เปลี่ยนปุ่มกลับมาเป็น "กดส่งงาน" และเปิดใช้งาน
+        updateButton('กดส่งงาน', false);
       }
     }
   </script>
