@@ -116,6 +116,18 @@
       return false; // ไม่ใช่ WebView
     }
 
+    // ฟังก์ชันเปลี่ยนสถานะปุ่ม
+    function updateButtonStatus(isUploading) {
+      const button = document.getElementById('uploadButton');
+      if (isUploading) {
+        button.textContent = 'กำลังส่งงาน...';
+        button.disabled = true;
+      } else {
+        button.textContent = 'ส่งงาน';
+        button.disabled = false;
+      }
+    }
+
     // ฟังก์ชันสำหรับขอสิทธิ์ OAuth
     function authenticate() {
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=token&client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${SCOPE}&access_type=online`;
@@ -207,18 +219,27 @@
         return;
       }
 
-      const subFolderName = `${jobNumber} ${symptoms}`;
-      const subFolderId = await createSubFolder(subFolderName);
-      if (!subFolderId) return;
+      updateButtonStatus(true);
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const newFileName = `${subFolderName}-${i + 1}.${file.name.split('.').pop()}`;
-        await uploadFile(file, subFolderId, newFileName);
+      try {
+        const subFolderName = `${jobNumber} ${symptoms}`;
+        const subFolderId = await createSubFolder(subFolderName);
+        if (!subFolderId) throw new Error('Subfolder creation failed');
+
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const newFileName = `${subFolderName}-${i + 1}.${file.name.split('.').pop()}`;
+          await uploadFile(file, subFolderId, newFileName);
+        }
+
+        alert('ไฟล์ทั้งหมดอัปโหลดสำเร็จ!');
+        document.getElementById('uploadForm').reset();
+      } catch (error) {
+        console.error('Error during upload:', error);
+        alert('เกิดข้อผิดพลาดในการอัปโหลด');
+      } finally {
+        updateButtonStatus(false);
       }
-
-      alert('ไฟล์ทั้งหมดอัปโหลดสำเร็จ!');
-      document.getElementById('uploadForm').reset();
     }
 
     // เมื่อโหลดหน้าเว็บ
