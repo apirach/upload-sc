@@ -46,10 +46,13 @@
       font-style: italic;
       color: #888;
     }
-    #openInBrowser {
+    #webviewMessage {
+      display: none;
       margin-top: 20px;
+      color: red;
     }
     #copyButton {
+      margin-top: 10px;
       background-color: #34A853;
       color: white;
     }
@@ -60,6 +63,12 @@
 </head>
 <body>
   <h1>ส่งงาน SC</h1>
+
+  <!-- ข้อความแจ้งเตือนและปุ่ม Copy URL -->
+  <div id="webviewMessage">
+    <p>กรุณาคัดลอก URL และเปิดในเบราว์เซอร์ เช่น Google Chrome หรือ Safari</p>
+    <button id="copyButton" onclick="copyURL()">Copy URL</button>
+  </div>
 
   <!-- ฟอร์มอัปโหลด -->
   <form id="uploadForm" style="display: none;">
@@ -72,12 +81,6 @@
     <button type="button" id="uploadButton" onclick="uploadFiles()">ส่งงาน</button>
   </form>
 
-  <!-- ปุ่ม Copy URL -->
-  <div id="openInBrowser" style="display: none;">
-    <p>กรุณาคัดลอก URL และเปิดในเบราว์เซอร์ เช่น Google Chrome หรือ Safari</p>
-    <button id="copyButton" onclick="copyURL()">Copy URL</button>
-  </div>
-
   <div class="footer">Designed by Apirach Rattanaudompisut</div>
 
   <script>
@@ -85,7 +88,7 @@
     const REDIRECT_URI = 'https://apirach.github.io/upload-sc/';
     const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 
-    // ตรวจสอบว่ากำลังเปิดใน WebView ของ LINE หรือไม่
+    // ตรวจสอบว่าเปิดใน WebView (LINE, Facebook, Instagram หรืออื่นๆ)
     function isWebView() {
       const ua = navigator.userAgent.toLowerCase();
       return ua.includes('line') || ua.includes('fb') || ua.includes('instagram');
@@ -96,41 +99,39 @@
       const url = window.location.href;
       navigator.clipboard.writeText(url).then(() => {
         alert('คัดลอก URL เรียบร้อยแล้ว! กรุณาวาง URL ในเบราว์เซอร์ภายนอก เช่น Google Chrome หรือ Safari');
-        closeWebView(); // แสดงคำแนะนำให้ผู้ใช้ปิด WebView
       }).catch(err => {
         console.error('Error copying URL:', err);
       });
     }
 
-    // พยายามปิด WebView (LINE ไม่รองรับ แต่แสดงข้อความได้)
-    function closeWebView() {
-      alert('กรุณาปิดหน้าต่างนี้ด้วยตนเอง');
-    }
-
-    function redirectToBrowser() {
+    // ฟังก์ชันตรวจสอบและแสดงข้อความ
+    function checkWebView() {
       if (isWebView()) {
-        document.getElementById('openInBrowser').style.display = 'block';
+        document.getElementById('webviewMessage').style.display = 'block'; // แสดงข้อความแจ้งเตือน
+      } else {
+        authenticate(); // หากไม่ใช่ WebView ให้เข้าสู่กระบวนการ Auth
       }
     }
 
+    // ฟังก์ชันสำหรับขอสิทธิ์ OAuth
     function authenticate() {
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=token&client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${SCOPE}&access_type=online`;
       window.location.href = authUrl;
     }
 
+    // ฟังก์ชันดึง Access Token จาก URL หลังผู้ใช้อนุญาต
     function getAccessTokenFromUrl() {
       const params = new URLSearchParams(window.location.hash.substring(1));
       return params.get('access_token');
     }
 
+    // เมื่อโหลดหน้าเว็บ
     window.onload = function () {
-      redirectToBrowser();
+      checkWebView();
 
       const accessToken = getAccessTokenFromUrl();
       if (accessToken) {
-        document.getElementById('uploadForm').style.display = 'block';
-      } else {
-        authenticate();
+        document.getElementById('uploadForm').style.display = 'block'; // แสดงฟอร์มหากมี Access Token
       }
     };
   </script>
