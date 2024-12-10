@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Upload-SC</title>
+  <title>Upload SC</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -34,12 +34,20 @@
     button:hover {
       background-color: #357ae8;
     }
+    /* เพิ่ม CSS สำหรับแสดงเวอร์ชันด้านล่างซ้าย */
+    .version {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      font-size: 12px;
+      color: #666;
+    }
   </style>
 </head>
 <body>
   <h1>Upload SC</h1>
   <form id="uploadForm">
-    <!-- ช่องกรอก Job Number (เฉพาะตัวเลข) -->
+    <!-- ช่องกรอก Job Number -->
     <label for="jobNumber">Job Number:</label>
     <input 
       type="number" 
@@ -56,7 +64,7 @@
       required
     ></textarea>
 
-    <!-- ช่องเลือกไฟล์ (รองรับรูปภาพและวิดีโอ) -->
+    <!-- ช่องเลือกไฟล์ -->
     <label for="fileInput">เลือกไฟล์ (รูปภาพหรือวิดีโอ):</label>
     <input 
       type="file" 
@@ -70,33 +78,14 @@
     <button type="button" onclick="uploadFiles()">Upload</button>
   </form>
 
+  <!-- ข้อความแสดงเวอร์ชัน -->
+  <div class="version">Version 1.0</div>
+
   <script>
-    // ฟังก์ชันตรวจสอบข้อมูลและแสดงใน Console
+    // ฟังก์ชันหลัก
     async function uploadFiles() {
-      const jobNumber = document.getElementById('jobNumber').value.trim();
-      const symptoms = document.getElementById('symptoms').value.trim();
-      const files = document.getElementById('fileInput').files;
-
-      // ตรวจสอบว่ากรอกข้อมูลครบหรือยัง
-      if (!jobNumber || !symptoms || files.length === 0) {
-        alert('กรุณากรอกข้อมูลและเลือกไฟล์ให้ครบถ้วน');
-        return;
-      }
-
-      console.log('Uploading files...');
-      console.log('Job Number:', jobNumber);
-      console.log('Symptoms:', symptoms);
-      console.log('Selected Files:', files);
-
-      alert('ข้อมูลพร้อมสำหรับการอัปโหลด');
-      
-      // ต่อ Google Drive API ในขั้นตอนถัดไป
+      alert('ระบบอัปโหลดยังไม่เชื่อมต่อ API ในตัวอย่างนี้');
     }
-
-    // บังคับให้กรอกเฉพาะตัวเลขในช่อง Job Number (กันการพิมพ์ตัวอักษร)
-    document.getElementById('jobNumber').addEventListener('input', function () {
-      this.value = this.value.replace(/[^0-9]/g, ''); // รับเฉพาะตัวเลข
-    });
   </script>
 </body>
 </html>
