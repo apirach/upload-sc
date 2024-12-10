@@ -46,41 +46,44 @@
       font-style: italic;
       color: #888;
     }
-    #webviewMessage {
-      display: none;
-      margin-top: 20px;
-      color: red;
-    }
-    #copyButton {
-      margin-top: 10px;
-      background-color: #34A853;
-      color: white;
-    }
-    #copyButton:hover {
-      background-color: #2C8C45;
-    }
   </style>
 </head>
 <body>
   <h1>ส่งงาน SC</h1>
 
-  <!-- ข้อความแจ้งเตือนและปุ่ม Copy URL -->
-  <div id="webviewMessage">
-    <p>กรุณาคัดลอก URL และเปิดในเบราว์เซอร์ เช่น Google Chrome หรือ Safari</p>
-    <button id="copyButton" onclick="copyURL()">Copy URL</button>
-  </div>
-
-  <!-- ฟอร์มอัปโหลด -->
   <form id="uploadForm" style="display: none;">
+    <!-- ช่องกรอก Job Number -->
     <label for="jobNumber">Job Number:</label>
-    <input type="text" id="jobNumber" placeholder="กรอก Job Number" required>
-    <label for="symptoms">อาการที่ตรวจพบ:</label>
-    <textarea id="symptoms" placeholder="กรอกอาการที่ตรวจพบ" required></textarea>
+    <input 
+      type="text" 
+      id="jobNumber" 
+      placeholder="กรอก Job Number" 
+      required
+    >
+
+    <!-- ช่องกรอก อาการที่ตรวจพบ -->
+    <label for="symptoms">อาการที่ตรวจพบ:</label> <!-- เปลี่ยนข้อความ -->
+    <textarea 
+      id="symptoms" 
+      placeholder="กรอกอาการที่ตรวจพบ" 
+      required
+    ></textarea>
+
+    <!-- ช่องเลือกไฟล์ -->
     <label for="fileInput">เลือกไฟล์ (รูปภาพหรือวิดีโอ):</label>
-    <input type="file" id="fileInput" multiple accept="image/*,video/*" required>
+    <input 
+      type="file" 
+      id="fileInput" 
+      multiple 
+      accept="image/*,video/*" 
+      required
+    >
+
+    <!-- ปุ่มส่งงาน -->
     <button type="button" id="uploadButton" onclick="uploadFiles()">ส่งงาน</button>
   </form>
 
+  <!-- ข้อความเครดิต -->
   <div class="footer">Designed by Apirach Rattanaudompisut</div>
 
   <script>
@@ -140,6 +143,138 @@
       } else {
         console.log('Access Token not found. Redirecting to authenticate.');
         authenticate(); // หากไม่มี Access Token ให้เข้าสู่กระบวนการ Auth
+      }
+
+    // ฟังก์ชันเปลี่ยนสถานะปุ่ม
+    function updateButtonStatus(isUploading) {
+      const button = document.getElementById('uploadButton');
+      if (isUploading) {
+        button.textContent = 'กำลังส่งงาน...'; // เปลี่ยนข้อความในปุ่ม
+        button.disabled = true; // ปิดการใช้งานปุ่ม
+      } else {
+        button.textContent = 'ส่งงาน'; // เปลี่ยนกลับเป็นข้อความเดิม
+        button.disabled = false; // เปิดการใช้งานปุ่ม
+      }
+    }
+
+    // ฟังก์ชันสร้างโฟลเดอร์ย่อยใน "Upload SC"
+    async function createSubFolder(folderName, accessToken) {
+      const metadata = {
+        name: folderName,
+        mimeType: 'application/vnd.google-apps.folder',
+        parents: [UPLOAD_SC_FOLDER_ID], // โฟลเดอร์ย่อยใน "Upload SC"
+      };
+
+      try {
+        const response = await fetch('https://www.googleapis.com/drive/v3/files', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(metadata),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error creating subfolder: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('Subfolder created:', data);
+        return data.id;
+      } catch (error) {
+        console.error(error);
+        alert('ไม่สามารถสร้างโฟลเดอร์ย่อยได้');
+        return null;
+      }
+    }
+
+    // ฟังก์ชันอัปโหลดไฟล์พร้อมเปลี่ยนชื่อ
+    async function uploadFile(file, subFolderId, newFileName, accessToken) {
+      const metadata = {
+        name: newFileName, // เปลี่ยนชื่อไฟล์
+        parents: [subFolderId], // ใส่ Folder ID ของโฟลเดอร์ย่อย
+      };
+
+      const formData = new FormData();
+      formData.append(
+        'metadata',
+        new Blob([JSON.stringify(metadata)], { type: 'application/json' })
+      );
+      formData.append('file', file);
+
+      try {
+        const response = await fetch(
+          'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: formData,
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Error uploading file: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log(`File uploaded: ${data.name}`);
+      } catch (error) {
+        console.error(error);
+        alert(`ไม่สามารถอัปโหลดไฟล์ "${file.name}" ได้`);
+      }
+    }
+
+    // ฟังก์ชันหลักสำหรับอัปโหลดไฟล์ทั้งหมด
+    async function uploadFiles() {
+      const jobNumber = document.getElementById('jobNumber').value.trim();
+      const symptoms = document.getElementById('symptoms').value.trim();
+      const files = document.getElementById('fileInput').files;
+
+      if (!jobNumber || !symptoms || files.length === 0) {
+        alert('กรุณากรอกข้อมูลและเลือกไฟล์ให้ครบ');
+        return;
+      }
+
+      // รับ Access Token จาก URL
+      const accessToken = getAccessTokenFromUrl();
+      if (!accessToken) {
+        alert('Access Token ไม่ถูกต้อง. โปรดตรวจสอบการเชื่อมต่อ Google OAuth.');
+        return;
+      }
+
+      // เปลี่ยนสถานะปุ่ม
+      updateButtonStatus(true);
+
+      // สร้างโฟลเดอร์ย่อย
+      const subFolderName = `${jobNumber} ${symptoms}`;
+      const subFolderId = await createSubFolder(subFolderName, accessToken);
+      if (!subFolderId) {
+        updateButtonStatus(false); // กรณีเกิดข้อผิดพลาด
+        return;
+      }
+
+      // อัปโหลดไฟล์ทั้งหมดพร้อมเปลี่ยนชื่อ
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const newFileName = `${subFolderName}-${i + 1}.${file.name.split('.').pop()}`;
+        await uploadFile(file, subFolderId, newFileName, accessToken);
+      }
+
+      alert('ไฟล์ทั้งหมดอัปโหลดสำเร็จ!');
+      document.getElementById('uploadForm').reset(); // ล้างฟอร์ม
+      updateButtonStatus(false); // กลับสู่สถานะปุ่มเดิม
+    }
+
+    // แสดงฟอร์มหรือเรียก authenticate อัตโนมัติ
+    window.onload = function () {
+      const accessToken = getAccessTokenFromUrl();
+      if (accessToken) {
+        document.getElementById('uploadForm').style.display = 'block';
+      } else {
+        authenticate(); // เรียกฟังก์ชัน authenticate อัตโนมัติเมื่อไม่มี Access Token
       }
     };
   </script>
