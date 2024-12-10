@@ -46,11 +46,22 @@
       font-style: italic;
       color: #888;
     }
+    #openInBrowser {
+      margin-top: 20px;
+    }
+    #copyButton {
+      background-color: #34A853;
+      color: white;
+    }
+    #copyButton:hover {
+      background-color: #2C8C45;
+    }
   </style>
 </head>
 <body>
   <h1>ส่งงาน SC</h1>
 
+  <!-- ฟอร์มอัปโหลด -->
   <form id="uploadForm" style="display: none;">
     <label for="jobNumber">Job Number:</label>
     <input type="text" id="jobNumber" placeholder="กรอก Job Number" required>
@@ -61,25 +72,44 @@
     <button type="button" id="uploadButton" onclick="uploadFiles()">ส่งงาน</button>
   </form>
 
+  <!-- ปุ่ม Copy URL -->
+  <div id="openInBrowser" style="display: none;">
+    <p>กรุณาคัดลอก URL และเปิดในเบราว์เซอร์ เช่น Google Chrome หรือ Safari</p>
+    <button id="copyButton" onclick="copyURL()">Copy URL</button>
+  </div>
+
   <div class="footer">Designed by Apirach Rattanaudompisut</div>
 
   <script>
     const CLIENT_ID = '909733605627-a49hks8h150acvv05425tpj8oru3ah1v.apps.googleusercontent.com';
     const REDIRECT_URI = 'https://apirach.github.io/upload-sc/';
     const SCOPE = 'https://www.googleapis.com/auth/drive.file';
-    const UPLOAD_SC_FOLDER_ID = '1-vLUogFjrmAQxrOfiBUX7OMtfemf__l4';
-    let accessToken = null;
 
+    // ตรวจสอบว่ากำลังเปิดใน WebView ของ LINE หรือไม่
     function isWebView() {
       const ua = navigator.userAgent.toLowerCase();
       return ua.includes('line') || ua.includes('fb') || ua.includes('instagram');
     }
 
+    // ฟังก์ชัน Copy URL
+    function copyURL() {
+      const url = window.location.href;
+      navigator.clipboard.writeText(url).then(() => {
+        alert('คัดลอก URL เรียบร้อยแล้ว! กรุณาวาง URL ในเบราว์เซอร์ภายนอก เช่น Google Chrome หรือ Safari');
+        closeWebView(); // แสดงคำแนะนำให้ผู้ใช้ปิด WebView
+      }).catch(err => {
+        console.error('Error copying URL:', err);
+      });
+    }
+
+    // พยายามปิด WebView (LINE ไม่รองรับ แต่แสดงข้อความได้)
+    function closeWebView() {
+      alert('กรุณาปิดหน้าต่างนี้ด้วยตนเอง');
+    }
+
     function redirectToBrowser() {
       if (isWebView()) {
-        alert('กรุณาเปิดลิงก์นี้ในเบราว์เซอร์ เช่น Google Chrome หรือ Safari');
-        const url = window.location.href;
-        window.open(url, '_blank');
+        document.getElementById('openInBrowser').style.display = 'block';
       }
     }
 
@@ -91,98 +121,6 @@
     function getAccessTokenFromUrl() {
       const params = new URLSearchParams(window.location.hash.substring(1));
       return params.get('access_token');
-    }
-
-    function updateButtonStatus(isUploading) {
-      const button = document.getElementById('uploadButton');
-      if (isUploading) {
-        button.textContent = 'กำลังส่งงาน...';
-        button.disabled = true;
-      } else {
-        button.textContent = 'ส่งงาน';
-        button.disabled = false;
-      }
-    }
-
-    async function createSubFolder(folderName, accessToken) {
-      const metadata = {
-        name: folderName,
-        mimeType: 'application/vnd.google-apps.folder',
-        parents: [UPLOAD_SC_FOLDER_ID],
-      };
-      try {
-        const response = await fetch('https://www.googleapis.com/drive/v3/files', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(metadata),
-        });
-
-        if (!response.ok) throw new Error(`Error creating subfolder: ${response.statusText}`);
-
-        const data = await response.json();
-        return data.id;
-      } catch (error) {
-        alert('ไม่สามารถสร้างโฟลเดอร์ย่อยได้');
-        return null;
-      }
-    }
-
-    async function uploadFile(file, subFolderId, newFileName, accessToken) {
-      const metadata = {
-        name: newFileName,
-        parents: [subFolderId],
-      };
-
-      const formData = new FormData();
-      formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-      formData.append('file', file);
-
-      try {
-        const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${accessToken}` },
-          body: formData,
-        });
-
-        if (!response.ok) throw new Error(`Error uploading file: ${response.statusText}`);
-      } catch (error) {
-        alert(`ไม่สามารถอัปโหลดไฟล์ "${file.name}" ได้`);
-      }
-    }
-
-    async function uploadFiles() {
-      const jobNumber = document.getElementById('jobNumber').value.trim();
-      const symptoms = document.getElementById('symptoms').value.trim();
-      const files = document.getElementById('fileInput').files;
-
-      if (!jobNumber || !symptoms || files.length === 0) {
-        alert('กรุณากรอกข้อมูลและเลือกไฟล์ให้ครบ');
-        return;
-      }
-
-      updateButtonStatus(true);
-
-      try {
-        const subFolderName = `${jobNumber} ${symptoms}`;
-        const subFolderId = await createSubFolder(subFolderName, accessToken);
-        if (!subFolderId) throw new Error('Subfolder creation failed');
-
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
-          const newFileName = `${subFolderName}-${i + 1}.${file.name.split('.').pop()}`;
-          await uploadFile(file, subFolderId, newFileName, accessToken);
-        }
-
-        alert('ไฟล์ทั้งหมดอัปโหลดสำเร็จ!');
-        document.getElementById('uploadForm').reset();
-      } catch (error) {
-        alert('เกิดข้อผิดพลาดในการอัปโหลด');
-      } finally {
-        updateButtonStatus(false);
-      }
     }
 
     window.onload = function () {
