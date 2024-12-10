@@ -87,6 +87,7 @@
     const CLIENT_ID = '909733605627-a49hks8h150acvv05425tpj8oru3ah1v.apps.googleusercontent.com';
     const REDIRECT_URI = 'https://apirach.github.io/upload-sc/';
     const SCOPE = 'https://www.googleapis.com/auth/drive.file';
+    let accessToken = null;
 
     // ตรวจสอบว่าเปิดใน WebView (LINE, Facebook, Instagram หรืออื่นๆ)
     function isWebView() {
@@ -108,9 +109,9 @@
     function checkWebView() {
       if (isWebView()) {
         document.getElementById('webviewMessage').style.display = 'block'; // แสดงข้อความแจ้งเตือน
-      } else {
-        authenticate(); // หากไม่ใช่ WebView ให้เข้าสู่กระบวนการ Auth
+        return true; // เป็น WebView
       }
+      return false; // ไม่ใช่ WebView
     }
 
     // ฟังก์ชันสำหรับขอสิทธิ์ OAuth
@@ -127,11 +128,18 @@
 
     // เมื่อโหลดหน้าเว็บ
     window.onload = function () {
-      checkWebView();
+      if (checkWebView()) {
+        return; // หากเปิดใน WebView ให้หยุดที่นี่
+      }
 
-      const accessToken = getAccessTokenFromUrl();
+      // ตรวจสอบ Access Token
+      accessToken = getAccessTokenFromUrl();
       if (accessToken) {
+        console.log('Access Token:', accessToken);
         document.getElementById('uploadForm').style.display = 'block'; // แสดงฟอร์มหากมี Access Token
+      } else {
+        console.log('Access Token not found. Redirecting to authenticate.');
+        authenticate(); // หากไม่มี Access Token ให้เข้าสู่กระบวนการ Auth
       }
     };
   </script>
